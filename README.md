@@ -383,7 +383,6 @@ function App() {
 export default App;
 -------------------------------------------------------------------------------------------------------
 
-
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -482,19 +481,37 @@ export class App {
     }
   }
 
-  // Add or update user
-  onSubmit() {
-    if (this.editId) {
-      const index = this.users.findIndex(u => u.id === this.editId);
-      if (index !== -1) this.users[index] = { ...this.form as User, id: this.editId };
-      this.editId = null;
-    } else {
-      this.form.id = this.nextId++;
-      this.users.push(this.form as User);
+onSubmit() {
+  if (this.editId) {
+    // Update user manually
+    for (let i = 0; i < this.users.length; i++) {
+      if (this.users[i].id === this.editId) {
+        this.users[i].name = this.form.name!;
+        this.users[i].state = this.form.state!;
+        this.users[i].contact = this.form.contact!;
+        this.users[i].email = this.form.email!;
+        this.users[i].image = this.form.image; // optional
+        break;
+      }
     }
-    this.form = {};
-    this.imagePreview = null;
+    this.editId = null; // reset edit mode
+  } else {
+    // Add new user
+    this.form.id = this.nextId++;
+    this.users.push({
+      id: this.form.id,
+      name: this.form.name!,
+      state: this.form.state!,
+      contact: this.form.contact!,
+      email: this.form.email!,
+      image: this.form.image
+    });
   }
+
+  // Clear form and image preview
+  this.form = {};
+  this.imagePreview = null;
+}
 
   // Edit user
   onEdit(user: User) {
