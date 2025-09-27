@@ -189,6 +189,198 @@ table {
   border-collapse: collapse;
 }
 ------------------------------------------------------------------------------------------------------
+
+                                        ex.js
+   
+const express=require('express')
+const cors=require('cors')
+const mongoose=require('mongoose')
+const bodyParser=require('body-parser')
+
+const app=express();
+app.use(cors());
+app.use(bodyParser.json());
+
+mongoose.connect("mongodb+srv://MCACA:YOknt7AtV9taEhsZ@mcaca.afbedg2.mongodb.net/customer_DB?retryWrites=true&w=majority&appName=MCACA")
+.then(()=>console.log(('MongoDB Connected')))
+.catch(err=>console.log(err));
+
+const USER = mongoose.model('user',{
+    name: String,
+    email:String,
+    mobile: String,
+    gender: String,
+    state: String,
+    password: String
+});
+
+app.post('/users',async (req,res)=>{
+    try{
+        const user=new USER(req.body)
+        await user.save()
+        res.status(201).json(user)
+    }catch(err){
+        res.status(400).json({error: err.message})
+    }
+})
+
+app.get('/users', async (req,res)=>{
+    try{
+        const users = await USER.find()
+        res.json(users)
+    }catch(err){
+        res.status(500).json({error: err.message})
+    }
+})
+
+app.put('/users/:id', async(req,res)=>{
+    try{
+         await USER.findByIdAndUpdate(req.params.id,req.body,{
+            new: true,
+        });
+    }catch(err){
+        res.status(500).json({error: err.message})
+    }
+})
+app.delete('/users/:id' , async(req,res)=>{
+    try{
+        await USER.findByIdAndDelete(req.params.id);
+        res.send("Deleted!")
+    }catch(err){
+        res.status(500).json({error: err.message})
+    }
+})
+app.listen(5000,()=>{
+    console.log('Server running on port http://localhost:5000')
+})                             
+-----------------------------------------------------------------------------------------------
+                                            app.js
+
+
+import React ,{useState, useEffect} from "react";
+import axios from 'axios'
+function App() {
+
+  const [form, setForm] =useState({
+    name:"",
+    email:"",
+    mobile:"",
+    gender:"",
+    state:"",
+    password:"",
+  });
+  const [users,setUsers] = useState([]);
+
+  const handleChange =(e) => setForm({...form, [e.target.name]:e.target.value});
+
+  const handleSubmit =async (e) =>{
+    e.preventDefault();
+    try{
+        await axios.post("http://localhost:5000/users",form);
+        setForm ({
+          name: "",
+          email:"",
+          mobile: "",
+          gender: "",
+          state: "",
+          password:"",
+        });
+        userLoad();
+    }catch (err){
+      alert("Error Saving User: "+err.message);
+    }
+  };
+
+  const handleEdit = (user) =>{
+      setForm({
+        name: user.name || "",
+          email:user.email || "",
+          mobile: user.mobile || "",
+          gender: user.gender || "",
+          state: user.state || "",
+          password:user.password || "",
+      })
+  }
+
+  const handleDelete = async (id) =>{
+    if(window.confirm("Are you you want to delete user?")){
+      await axios.delete(`http://localhost:5000/users/${id}`);
+      userLoad();
+    }
+  }
+  const userLoad = async () =>{
+    const res = await axios.get("http://localhost:5000/users");
+    setUsers(res.data);
+  }
+  useEffect(()=>{
+    userLoad();
+  },[]);
+
+  return (
+    <div style={{diplsy:"flex", flexDirection:"column", width: "30%", margin:"5% auto" }}>
+        <center>
+        <h1>User Management</h1>
+
+        </center>
+        
+        <form onSubmit={handleSubmit} style={{display:"flex", flexDirection:'column', width:"60%" , margin:'auto' } }>
+           <input type="text" name="name" placeholder="Name" value={form.name} onChange={handleChange} required /> <br/>
+           <input type="email" name="email" placeholder="Email" value={form.email} onChange={handleChange} required /> <br/>
+           <input type="text" name="mobile" placeholder="Mobile" value={form.mobile} onChange={handleChange} required /> <br/>
+           <select name="gender" value={form.gender} onChange={handleChange}> 
+              <option value="" >Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+
+           </select><br/>
+           <input type="text" name="state" placeholder="State" value={form.state} onChange={handleChange} required /> <br/>
+           <input type="password" name="password" placeholder="Password" value={form.password} onChange={handleChange} required /> <br/>
+           <button type="submit">Save User</button>
+        </form>
+
+        <center>
+          <h3>Display User:</h3>
+        <table border={1}>
+          <tr>
+            {/* <th><strong>id</strong></th> */}
+            <th><strong>Name</strong></th>
+            <th><strong>Email</strong></th>
+            <th><strong>Mobile</strong></th>
+            <th><strong>Gender</strong></th>
+            <th><strong>State</strong></th>
+            <th><strong>Password</strong></th>
+            <th><strong>Edit</strong></th>
+            
+          </tr>
+          {users.length > 0 ? (
+            users.map((u)=>(
+              <tr key={u._id}>
+            {/* <td><center>{u._id}</center></td> */}
+            <td><center>{u.name}</center></td>
+            <td><center>{u.email}</center></td>
+            <td><center>{u.mobile}</center></td>
+            <td><center>{u.gender}</center></td>
+            <td><center>{u.state}</center></td>
+            <td><center>{u.password}</center></td>
+            <td><center>
+                <button onClick={()=>handleEdit(u)}>Edit</button>
+                {" "}
+                <button onClick={()=>handleDelete(u._id)}>Delete</button>
+              </center></td>
+          </tr>
+            ))
+          ) : (
+            <center><strong>No User Found</strong></center>
+          )}
+          
+        </table>
+        </center>
+    </div>
+  );
+}
+
+export default App;
 -------------------------------------------------------------------------------------------------------
 
 
